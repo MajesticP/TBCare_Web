@@ -1,0 +1,66 @@
+[00:00:17.437] Server  LOG      ✓ Ready in 11.7s
+[00:00:20.688] Server  LOG      ○ Compiling / ...
+[00:00:36.302] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:39.554] Browser LOG     [v0] Navigating to: edukasi
+[00:02:40.073] Browser LOG     [v0] Navigating to: home
+[00:02:41.729] Browser LOG     [v0] Navigating to: edukasi
+[00:02:42.114] Browser LOG     [v0] Navigating to: jadwal
+[00:02:45.834] Browser LOG     [v0] Navigating to: home
+[00:02:53.209] Browser LOG     [v0] Navigating to: jadwal
+[00:02:56.202] Browser LOG     [v0] Navigating to: edukasi
+[00:02:59.258] Browser LOG     [v0] Navigating to: home
+[00:03:00.737] Browser LOG     [v0] Navigating to: jadwal
+[00:03:01.385] Browser LOG     [v0] Navigating to: edukasi
+[00:03:02.553] Browser LOG     [v0] Navigating to: jadwal
+[00:03:03.273] Browser LOG     [v0] Navigating to: edukasi
+[00:03:04.049] Browser LOG     [v0] Navigating to: jadwal
+[00:03:04.850] Browser LOG     [v0] Navigating to: edukasi
+[00:03:05.625] Browser LOG     [v0] Navigating to: home
+[00:03:07.393] Browser LOG     [v0] Navigating to: edukasi
+[00:03:07.945] Browser LOG     [v0] Navigating to: jadwal
+[00:03:10.793] Browser LOG     [v0] Navigating to: home
+[00:03:13.801] Browser LOG     [v0] Navigating to: edukasi
+[00:03:19.377] Browser LOG     [v0] Navigating to: home
+[00:03:21.777] Browser LOG     [v0] Navigating to: edukasi
+[00:03:29.434] Browser LOG     [v0] Navigating to: home
+[00:03:41.386] Browser LOG     [v0] Navigating to: jadwal
+[00:03:45.376] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:03:45.376] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:05:10.634] Browser LOG     [v0] Navigating to: home
+[00:05:15.657] Browser LOG     [v0] Navigating to: jadwal
+[00:05:18.264] Browser LOG     [v0] Navigating to: edukasi
+[00:05:35.754] Browser LOG     [v0] Navigating to: home
+[00:12:27.908] Server  LOG      ✓ Compiled in 523ms
+[00:12:33.515] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:12:55.841] Browser LOG     [v0] Navigating to: edukasi
+[00:12:56.497] Browser LOG     [v0] Navigating to: jadwal
+[00:13:03.059] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:13:03.059] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:13:04.368] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:13:04.368] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:13:20.872] Browser LOG     [v0] Navigating to: home
+[00:13:43.000] Browser LOG     [v0] Navigating to: jadwal
+[00:13:44.328] Browser LOG     [v0] Navigating to: home
+[00:17:41.339] Server  LOG      ✓ Compiled in 219ms
+[00:17:46.484] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:40.289] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:19:03.680] Browser LOG     [v0] Navigating to: jadwal
+[00:19:05.432] Browser LOG     [v0] Navigating to: home
+[00:21:32.269] Server  LOG      ✓ Compiled in 265ms
+[00:21:35.422] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:21:56.664] Browser LOG     [v0] Navigating to: jadwal
+[00:21:58.799] Browser LOG     [v0] Navigating to: home
+[00:23:00.081] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:24:44.157] Server  LOG      ✓ Compiled in 153ms
+[00:24:56.326] Server  LOG      ✓ Compiled in 293ms
+[00:25:24.263] Browser LOG     [v0] Navigating to: jadwal
+[00:25:28.741] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:25:28.742] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:25:30.479] Browser LOG     [v0] Navigating to: home
+[00:25:32.959] Browser LOG     [v0] Navigating to: edukasi
+[00:25:34.255] Browser LOG     [v0] Navigating to: jadwal
+[00:25:34.962] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:25:34.962] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:25:36.503] Browser LOG     [v0] Navigating to: home
+[00:25:38.376] Browser LOG     [v0] Navigating to: edukasi
+[00:25:39.592] Browser LOG     [v0] Navigating to: jadwal
