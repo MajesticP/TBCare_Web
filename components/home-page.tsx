@@ -4,12 +4,13 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Home, BookOpen, Calendar, LogOut, User, X, Bell, Search } from "lucide-react"
 import { collection, getDocs } from "firebase/firestore"
-import { signOut } from "firebase/auth" // Added import for Logout
+import { signOut } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 
 interface HomePageProps {
   onLogout: () => void
   onNavigate: (page: "home" | "edukasi" | "jadwal") => void
+  onNavigateToProfile?: () => void
   onOpenBerita?: () => void
 }
 
@@ -29,7 +30,7 @@ interface MedicationSchedule {
   notified?: boolean
 }
 
-export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePageProps) {
+export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, onOpenBerita }: HomePageProps) {
   const [showSidebar, setShowSidebar] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserData | null>(null)
   const [daysRemaining, setDaysRemaining] = useState(24)
@@ -52,7 +53,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
       }
     }
 
-    // Also load from Firebase auth
     const firebaseUser = auth.currentUser
     if (firebaseUser) {
       setCurrentUser(prev => ({
@@ -64,7 +64,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
     }
   }, [])
 
-  // Load schedules from Firestore
   useEffect(() => {
     const loadSchedules = async () => {
       const user = auth.currentUser
@@ -84,7 +83,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
 
     loadSchedules()
     
-    // Refresh every minute to update countdown
     const interval = setInterval(() => {
       loadSchedules()
     }, 60000)
@@ -107,7 +105,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
       const date = new Date(year, month, today + i)
       const dateStr = date.toISOString().split("T")[0]
       
-      // Count how many reminders for this date
       const reminderCount = schedules.filter(s => s.date === dateStr && !s.taken).length
       
       days.push({
@@ -120,10 +117,9 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
     return days
   }
 
-  // UPDATED: Async function to handle Firebase logout
   const handleLogout = async () => {
     try {
-      await signOut(auth) // This kills the Firebase session
+      await signOut(auth)
       localStorage.removeItem("tbcare_current_user")
       onLogout()
     } catch (error) {
@@ -131,7 +127,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
     }
   }
 
-  // Handler for "Ada Keluhan" button - navigates to Jadwal page
   const handleKeluhanClick = () => {
     onNavigate("jadwal")
   }
@@ -141,12 +136,10 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
     s.date === currentDate.toISOString().split("T")[0] && !s.taken
   )
 
-  // Get next upcoming reminder
   const getNextReminder = () => {
     const now = new Date()
     const todayStr = now.toISOString().split("T")[0]
     
-    // Get all future reminders (today and beyond)
     const futureReminders = schedules
       .filter(s => !s.taken)
       .map(s => ({
@@ -159,15 +152,13 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
     return futureReminders[0] || null
   }
 
-  // Calculate days remaining based on actual reminders
   const calculateDaysFromReminders = () => {
     if (schedules.length === 0) return 0
     
-    // Get all future reminders
     const futureReminders = schedules
       .filter(s => !s.taken)
       .map(s => new Date(s.date))
-      .sort((a, b) => b.getTime() - a.getTime()) // Sort descending to get the last date
+      .sort((a, b) => b.getTime() - a.getTime())
     
     if (futureReminders.length === 0) return 0
     
@@ -184,7 +175,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
 
   const reminderDaysRemaining = calculateDaysFromReminders()
 
-  // Calculate hours remaining until next reminder
   const getHoursRemaining = () => {
     const nextReminder = getNextReminder()
     if (!nextReminder) return null
@@ -203,7 +193,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
   return (
     <div className="min-h-screen bg-[#f8fafc] flex">
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 p-6 fixed h-full">
-        {/* Logo */}
         <div className="flex items-center gap-3 mb-10">
           <div className="w-10 h-10 rounded-xl overflow-hidden">
             <Image
@@ -217,7 +206,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
           <span className="text-xl font-bold text-foreground">TBCare</span>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 space-y-2">
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-[#4a90d9]/10 text-[#4a90d9] font-medium">
             <Home className="w-5 h-5" />
@@ -239,7 +227,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
           </button>
         </nav>
 
-        {/* User Profile Card */}
         <div className="mt-auto pt-6 border-t border-gray-100">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#4a90d9]/20">
@@ -266,7 +253,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
         </div>
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
       {showSidebar && (
         <div
           className="fixed inset-0 bg-black/50 z-40 animate-in fade-in duration-200 lg:hidden"
@@ -274,7 +260,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
         />
       )}
 
-      {/* Mobile Sidebar */}
       <div
         className={`fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${showSidebar ? "translate-x-0" : "translate-x-full"}`}
       >
@@ -301,7 +286,13 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
           </div>
 
           <div className="space-y-2">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#f0f7fa] transition-colors text-foreground">
+            <button 
+              onClick={() => {
+                setShowSidebar(false)
+                onNavigateToProfile?.()
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#f0f7fa] transition-colors text-foreground"
+            >
               <User className="w-5 h-5 text-[#4a90d9]" />
               <span className="font-medium">Profil Saya</span>
             </button>
@@ -317,7 +308,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
         </div>
       </div>
 
-      {/* Main Content Wrapper */}
       <div className="flex-1 lg:ml-64">
         <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white border-b border-gray-100 sticky top-0 z-30">
           <div>
@@ -351,10 +341,8 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="p-4 pb-24 lg:p-8 lg:pb-8">
           <div className="max-w-md mx-auto lg:max-w-none">
-            {/* Mobile Header - Only visible on small screens */}
             <div className="flex items-center justify-between mb-6 lg:hidden">
               <div>
                 <p className="text-muted-foreground text-sm">Hello!</p>
@@ -378,7 +366,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
             </div>
 
             <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
-              {/* Medicine Reminder Card */}
               <div className="bg-gradient-to-br from-[#d4e8f9] to-[#bdd9f2] rounded-3xl p-5 lg:col-span-2">
                 <div className="lg:flex lg:items-start lg:justify-between">
                   <div className="lg:flex-1">
@@ -404,7 +391,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
                       </div>
                     </div>
 
-                    {/* Calendar with schedule indicators */}
                     <div className="flex items-center justify-between mb-4 bg-white/40 rounded-2xl p-2 lg:max-w-md">
                       {calendarDays.map((dayInfo, index) => {
                         const isToday = dayInfo.day === currentDate.getDate() && 
@@ -422,7 +408,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
                             >
                               {dayInfo.day}
                             </div>
-                            {/* Schedule indicator dot with count */}
                             {dayInfo.reminderCount > 0 && (
                               <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-orange-500 rounded-full border-2 border-white flex items-center justify-center">
                                 <span className="text-[10px] font-bold text-white leading-none">
@@ -436,7 +421,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
                     </div>
                   </div>
 
-                  {/* Medicine Time - repositioned for desktop */}
                   <div className="flex items-center justify-between bg-white/60 rounded-2xl p-4 lg:ml-6 lg:flex-col lg:items-end lg:justify-center lg:min-w-48">
                     <p className="text-sm text-foreground/80 lg:text-right lg:mb-2">
                       {timeRemaining ? (
@@ -476,7 +460,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
                 </div>
               </div>
 
-              {/* Complaint Card - Now navigates to Jadwal */}
               <div 
                 onClick={handleKeluhanClick}
                 className="bg-gradient-to-br from-[#e8f4fc] to-[#d6ecf8] rounded-3xl p-5 flex items-center gap-4 hover:shadow-lg transition-shadow cursor-pointer group"
@@ -504,7 +487,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
                 </div>
               </div>
 
-              {/* News Card */}
               <div
                 onClick={onOpenBerita}
                 className="bg-gradient-to-br from-[#fef3c7] to-[#fde68a] rounded-3xl p-5 flex items-center gap-4 hover:shadow-lg transition-shadow cursor-pointer group"
@@ -563,7 +545,6 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
         </main>
       </div>
 
-      {/* Bottom Navigation - Mobile Only */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 shadow-lg lg:hidden">
         <div className="max-w-md mx-auto flex items-center justify-around">
           <button className="flex flex-col items-center gap-1 px-6 py-2 bg-[#d4e8f9] rounded-full">
