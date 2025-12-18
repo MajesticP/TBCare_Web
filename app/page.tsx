@@ -21,45 +21,78 @@ import VaksinBcgPage from "@/components/vaksin-bcg-page"
 import BeritaTbcPage from "@/components/berita-tbc-page"
 import JadwalPage from "@/components/jadwal-page"
 
+type Page =
+  | "login"
+  | "register"
+  | "home"
+  | "edukasi"
+  | "jadwal"
+  | "diri-sendiri"
+  | "keluarga"
+  | "pembuangan-dahak"
+  | "efek-samping-obat"
+  | "pemenuhan-nutrisi"
+  | "aktivitas-harian"
+  | "pencegahan-penularan"
+  | "apa-itu-tbc"
+  | "pencegahan-penularan-keluarga"
+  | "tanda-gejala-tbc"
+  | "peran-keluarga"
+  | "vaksin-bcg"
+  | "berita-tbc"
+
+const validPages: Page[] = [
+  "login", "register", "home", "edukasi", "jadwal", "diri-sendiri",
+  "keluarga", "pembuangan-dahak", "efek-samping-obat", "pemenuhan-nutrisi",
+  "aktivitas-harian", "pencegahan-penularan", "apa-itu-tbc",
+  "pencegahan-penularan-keluarga", "tanda-gejala-tbc", "peran-keluarga",
+  "vaksin-bcg", "berita-tbc"
+]
+
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
-  const [currentPage, setCurrentPage] = useState<
-    | "login"
-    | "register"
-    | "home"
-    | "edukasi"
-    | "jadwal"
-    | "diri-sendiri"
-    | "keluarga"
-    | "pembuangan-dahak"
-    | "efek-samping-obat"
-    | "pemenuhan-nutrisi"
-    | "aktivitas-harian"
-    | "pencegahan-penularan"
-    | "apa-itu-tbc"
-    | "pencegahan-penularan-keluarga"
-    | "tanda-gejala-tbc"
-    | "peran-keluarga"
-    | "vaksin-bcg"
-    | "berita-tbc"
-  >("login")
+  const [currentPage, setCurrentPage] = useState<Page>("login")
 
+  // Sync URL with currentPage + handle back/forward buttons
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-      const currentUser = localStorage.getItem("tbcare_current_user")
-      if (currentUser) {
-        setCurrentPage("home")
+    const handleUrlChange = () => {
+      const path = window.location.pathname.slice(1) || "login"
+      if (validPages.includes(path as Page)) {
+        setCurrentPage(path as Page)
+      } else {
+        setCurrentPage("login")
+        window.history.replaceState(null, "", "/")
       }
+    }
+
+    handleUrlChange() // initial load
+    window.addEventListener("popstate", handleUrlChange)
+
+    return () => window.removeEventListener("popstate", handleUrlChange)
+  }, [])
+
+  // Universal navigation function
+  const navigateTo = useCallback((page: Page) => {
+    setCurrentPage(page)
+    const url = page === "login" ? "/" : `/${page}`
+    window.history.pushState(null, "", url)
+  }, [])
+
+  // Check login status IMMEDIATELY + show loading screen for 3 seconds
+  useEffect(() => {
+    // Always show loading screen for 3 seconds (nice UX)
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false)
     }, 3000)
 
-    return () => clearTimeout(timer)
-  }, [])
+    // Check if user is already logged in — runs right away on every load/refresh
+    const savedUser = localStorage.getItem("tbcare_current_user")
+    if (savedUser) {
+      navigateTo("home")
+    }
 
-  const handleNavigate = useCallback((page: "home" | "edukasi" | "jadwal") => {
-    console.log("[v0] Navigating to:", page)
-    setCurrentPage(page)
-  }, [])
+    return () => clearTimeout(loadingTimer)
+  }, [navigateTo])
 
   if (isLoading) {
     return (
@@ -72,79 +105,96 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#f0f7fa]">
       {currentPage === "login" && (
-        <LoginPage onRegister={() => setCurrentPage("register")} onLogin={() => setCurrentPage("home")} />
+        <LoginPage
+          onRegister={() => navigateTo("register")}
+          onLogin={() => navigateTo("home")}
+        />
       )}
-      {currentPage === "register" && <RegisterPage onBackToLogin={() => setCurrentPage("login")} />}
+
+      {currentPage === "register" && (
+        <RegisterPage onBackToLogin={() => navigateTo("login")} />
+      )}
+
       {currentPage === "home" && (
         <HomePage
-          onLogout={() => setCurrentPage("login")}
-          onNavigate={handleNavigate}
-          onOpenBerita={() => setCurrentPage("berita-tbc")}
+          onLogout={() => {
+            localStorage.removeItem("tbcare_current_user")
+            navigateTo("login")
+          }}
+          onNavigate={navigateTo}
+          onOpenBerita={() => navigateTo("berita-tbc")}
         />
       )}
+
       {currentPage === "edukasi" && (
         <EdukasiPage
-          onBack={() => setCurrentPage("home")}
-          onNavigate={handleNavigate}
-          onOpenDiriSendiri={() => setCurrentPage("diri-sendiri")}
-          onOpenKeluarga={() => setCurrentPage("keluarga")}
+          onBack={() => navigateTo("home")}
+          onNavigate={navigateTo}
+          onOpenDiriSendiri={() => navigateTo("diri-sendiri")}
+          onOpenKeluarga={() => navigateTo("keluarga")}
         />
       )}
-      {currentPage === "jadwal" && <JadwalPage onBack={() => setCurrentPage("home")} onNavigate={handleNavigate} />}
+
+      {currentPage === "jadwal" && (
+        <JadwalPage onBack={() => navigateTo("home")} onNavigate={navigateTo} />
+      )}
+
       {currentPage === "diri-sendiri" && (
         <UntukDiriSendiriPage
-          onBack={() => setCurrentPage("edukasi")}
-          onNavigate={handleNavigate}
-          onOpenPencegahanPenularan={() => setCurrentPage("pencegahan-penularan")}
-          onOpenEfekSampingObat={() => setCurrentPage("efek-samping-obat")}
-          onOpenPembuanganDahak={() => setCurrentPage("pembuangan-dahak")}
-          onOpenPemenuhanNutrisi={() => setCurrentPage("pemenuhan-nutrisi")}
-          onOpenAktivitasHarian={() => setCurrentPage("aktivitas-harian")}
+          onBack={() => navigateTo("edukasi")}
+          onNavigate={navigateTo}
+          onOpenPencegahanPenularan={() => navigateTo("pencegahan-penularan")}
+          onOpenEfekSampingObat={() => navigateTo("efek-samping-obat")}
+          onOpenPembuanganDahak={() => navigateTo("pembuangan-dahak")}
+          onOpenPemenuhanNutrisi={() => navigateTo("pemenuhan-nutrisi")}
+          onOpenAktivitasHarian={() => navigateTo("aktivitas-harian")}
         />
       )}
+
       {currentPage === "keluarga" && (
         <UntukKeluargaPage
-          onBack={() => setCurrentPage("edukasi")}
-          onNavigate={handleNavigate}
-          onOpenApaItuTbc={() => setCurrentPage("apa-itu-tbc")}
-          onOpenPencegahanPenularan={() => setCurrentPage("pencegahan-penularan-keluarga")}
-          onOpenTandaGejala={() => setCurrentPage("tanda-gejala-tbc")}
-          onOpenPeranKeluarga={() => setCurrentPage("peran-keluarga")}
-          onOpenVaksinBcg={() => setCurrentPage("vaksin-bcg")}
+          onBack={() => navigateTo("edukasi")}
+          onNavigate={navigateTo}
+          onOpenApaItuTbc={() => navigateTo("apa-itu-tbc")}
+          onOpenPencegahanPenularan={() => navigateTo("pencegahan-penularan-keluarga")}
+          onOpenTandaGejala={() => navigateTo("tanda-gejala-tbc")}
+          onOpenPeranKeluarga={() => navigateTo("peran-keluarga")}
+          onOpenVaksinBcg={() => navigateTo("vaksin-bcg")}
         />
       )}
+
       {currentPage === "pembuangan-dahak" && (
-        <PembuanganDahakPage onBack={() => setCurrentPage("diri-sendiri")} onNavigate={handleNavigate} />
+        <PembuanganDahakPage onBack={() => navigateTo("diri-sendiri")} onNavigate={navigateTo} />
       )}
       {currentPage === "efek-samping-obat" && (
-        <EfekSampingObatPage onBack={() => setCurrentPage("diri-sendiri")} onNavigate={handleNavigate} />
+        <EfekSampingObatPage onBack={() => navigateTo("diri-sendiri")} onNavigate={navigateTo} />
       )}
       {currentPage === "pemenuhan-nutrisi" && (
-        <PemenuhanNutrisiPage onBack={() => setCurrentPage("diri-sendiri")} onNavigate={handleNavigate} />
+        <PemenuhanNutrisiPage onBack={() => navigateTo("diri-sendiri")} onNavigate={navigateTo} />
       )}
       {currentPage === "aktivitas-harian" && (
-        <AktivitasHarianPage onBack={() => setCurrentPage("diri-sendiri")} onNavigate={handleNavigate} />
+        <AktivitasHarianPage onBack={() => navigateTo("diri-sendiri")} onNavigate={navigateTo} />
       )}
       {currentPage === "pencegahan-penularan" && (
-        <PencegahanPenularanPage onBack={() => setCurrentPage("diri-sendiri")} onNavigate={handleNavigate} />
+        <PencegahanPenularanPage onBack={() => navigateTo("diri-sendiri")} onNavigate={navigateTo} />
       )}
       {currentPage === "apa-itu-tbc" && (
-        <ApaItuTbcPage onBack={() => setCurrentPage("keluarga")} onNavigate={handleNavigate} />
+        <ApaItuTbcPage onBack={() => navigateTo("keluarga")} onNavigate={navigateTo} />
       )}
       {currentPage === "pencegahan-penularan-keluarga" && (
-        <PencegahanPenularanKeluargaPage onBack={() => setCurrentPage("keluarga")} onNavigate={handleNavigate} />
+        <PencegahanPenularanKeluargaPage onBack={() => navigateTo("keluarga")} onNavigate={navigateTo} />
       )}
       {currentPage === "tanda-gejala-tbc" && (
-        <TandaGejalaTbcPage onBack={() => setCurrentPage("keluarga")} onNavigate={handleNavigate} />
+        <TandaGejalaTbcPage onBack={() => navigateTo("keluarga")} onNavigate={navigateTo} />
       )}
       {currentPage === "peran-keluarga" && (
-        <PeranKeluargaPage onBack={() => setCurrentPage("keluarga")} onNavigate={handleNavigate} />
+        <PeranKeluargaPage onBack={() => navigateTo("keluarga")} onNavigate={navigateTo} />
       )}
       {currentPage === "vaksin-bcg" && (
-        <VaksinBcgPage onBack={() => setCurrentPage("keluarga")} onNavigate={handleNavigate} />
+        <VaksinBcgPage onBack={() => navigateTo("keluarga")} onNavigate={navigateTo} />
       )}
       {currentPage === "berita-tbc" && (
-        <BeritaTbcPage onBack={() => setCurrentPage("home")} onNavigate={handleNavigate} />
+        <BeritaTbcPage onBack={() => navigateTo("home")} onNavigate={navigateTo} />
       )}
     </main>
   )
