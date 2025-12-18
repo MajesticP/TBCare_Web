@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Home, BookOpen, Calendar, LogOut, User, X, Bell, Search } from "lucide-react"
 import { collection, getDocs } from "firebase/firestore"
+import { signOut } from "firebase/auth" // Added import for Logout
 import { auth, db } from "@/lib/firebase"
 
 interface HomePageProps {
@@ -119,9 +120,15 @@ export default function HomePage({ onLogout, onNavigate, onOpenBerita }: HomePag
     return days
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("tbcare_current_user")
-    onLogout()
+  // UPDATED: Async function to handle Firebase logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth) // This kills the Firebase session
+      localStorage.removeItem("tbcare_current_user")
+      onLogout()
+    } catch (error) {
+      console.error("Error logging out:", error)
+    }
   }
 
   // Handler for "Ada Keluhan" button - navigates to Jadwal page

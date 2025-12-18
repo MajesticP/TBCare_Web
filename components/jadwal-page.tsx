@@ -399,7 +399,8 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
       </div>
 
       {/* ===== BOTTOM BAR MOBILE ===== */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 shadow-lg lg:hidden">
+      {/* ADDED: z-50 to ensure it floats above everything else */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 shadow-lg lg:hidden z-50">
         <div className="max-w-md mx-auto flex items-center justify-around">
           <button
             type="button"
