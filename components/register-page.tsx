@@ -132,7 +132,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Nama */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <User className="w-5 h-5" />
             </div>
             <input
@@ -148,39 +148,58 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
 
           {/* Tanggal Pertama Minum Obat */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            {/* Icon - pointer-events-none ensures clicks go through to input */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10">
               <Calendar className="w-5 h-5" />
             </div>
+            
+            {/* Custom Description Text - Only visible when empty */}
+            {!formData.tanggalPertama && (
+              <span className="absolute left-12 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none z-10 select-none">
+                Tanggal Pertama Minum Obat
+              </span>
+            )}
+            
             <input
               type="date"
               name="tanggalPertama"
-              placeholder="Tanggal Pertama Minum Obat"
               value={formData.tanggalPertama}
               onChange={handleChange}
-              className={`${inputClass} ${!formData.tanggalPertama ? "text-muted-foreground" : ""}`}
+              // If empty, make text transparent to hide the default browser placeholder (mm/dd/yyyy)
+              // If has value, show normal text color
+              className={`${inputClass} ${!formData.tanggalPertama ? "text-transparent" : "text-foreground"} relative z-0`}
               required
             />
           </div>
 
           {/* Waktu Saat Minum Obat */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            {/* Icon */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10">
               <Clock className="w-5 h-5" />
             </div>
+
+             {/* Custom Description Text */}
+             {!formData.waktuMinum && (
+              <span className="absolute left-12 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none z-10 select-none">
+                Waktu Saat Minum Obat
+              </span>
+            )}
+
             <input
               type="time"
               name="waktuMinum"
-              placeholder="Waktu Saat Minum Obat"
               value={formData.waktuMinum}
               onChange={handleChange}
-              className={`${inputClass} ${!formData.waktuMinum ? "text-muted-foreground" : ""}`}
+              // Logic to hide default --:-- placeholder when custom label is shown
+              className={`${inputClass} ${!formData.waktuMinum ? "text-transparent" : "text-foreground"} relative z-0`}
               required
             />
           </div>
 
           {/* Jenis Kelamin */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <Users className="w-5 h-5" />
             </div>
             <select
@@ -200,7 +219,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
 
           {/* Phone Number */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <Phone className="w-5 h-5" />
             </div>
             <input
@@ -216,7 +235,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
 
           {/* Berat Badan */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <Scale className="w-5 h-5" />
             </div>
             <input
@@ -232,7 +251,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
 
           {/* Tinggi Badan */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <Ruler className="w-5 h-5" />
             </div>
             <input
@@ -248,7 +267,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
 
           {/* Alamat */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <MapPin className="w-5 h-5" />
             </div>
             <input
@@ -264,7 +283,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
 
           {/* E-mail */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <Mail className="w-5 h-5" />
             </div>
             <input
@@ -280,7 +299,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
 
           {/* Kata Sandi */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <Lock className="w-5 h-5" />
             </div>
             <input
@@ -303,7 +322,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
 
           {/* Verifikasi Kata Sandi */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <Lock className="w-5 h-5" />
             </div>
             <input
