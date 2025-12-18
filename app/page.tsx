@@ -146,7 +146,13 @@ export default function Home() {
       )}
 
       {currentPage === "jadwal" && (
-        <JadwalPage onBack={() => navigateTo("home")} onNavigate={navigateTo} />
+        <JadwalPage 
+          onLogout={() => {
+            localStorage.removeItem("tbcare_current_user")
+            navigateTo("login")
+          }}
+          onNavigate={navigateTo}
+        />
       )}
 
       {currentPage === "diri-sendiri" && (
