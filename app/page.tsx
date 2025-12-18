@@ -20,6 +20,7 @@ import PeranKeluargaPage from "@/components/peran-keluarga-page"
 import VaksinBcgPage from "@/components/vaksin-bcg-page"
 import BeritaTbcPage from "@/components/berita-tbc-page"
 import JadwalPage from "@/components/jadwal-page"
+import ProfileEditPage from "@/components/profile-edit-page"
 
 type Page =
   | "login"
@@ -27,6 +28,7 @@ type Page =
   | "home"
   | "edukasi"
   | "jadwal"
+  | "profile"
   | "diri-sendiri"
   | "keluarga"
   | "pembuangan-dahak"
@@ -42,7 +44,7 @@ type Page =
   | "berita-tbc"
 
 const validPages: Page[] = [
-  "login", "register", "home", "edukasi", "jadwal", "diri-sendiri",
+  "login", "register", "home", "edukasi", "jadwal", "profile", "diri-sendiri",
   "keluarga", "pembuangan-dahak", "efek-samping-obat", "pemenuhan-nutrisi",
   "aktivitas-harian", "pencegahan-penularan", "apa-itu-tbc",
   "pencegahan-penularan-keluarga", "tanda-gejala-tbc", "peran-keluarga",
@@ -122,7 +124,15 @@ export default function Home() {
             navigateTo("login")
           }}
           onNavigate={navigateTo}
+          onNavigateToProfile={() => navigateTo("profile")}
           onOpenBerita={() => navigateTo("berita-tbc")}
+        />
+      )}
+
+      {currentPage === "profile" && (
+        <ProfileEditPage
+          onBack={() => navigateTo("home")}
+          onSave={() => navigateTo("home")}
         />
       )}
 
