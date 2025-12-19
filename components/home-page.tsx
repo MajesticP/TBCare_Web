@@ -394,14 +394,14 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mb-4 bg-white/40 rounded-2xl p-2 lg:max-w-md">
+                    <div className="flex items-center justify-between gap-1 mb-4 bg-white/40 rounded-2xl p-2 lg:max-w-md">
                       {calendarDays.map((dayInfo, index) => {
                         const isToday = dayInfo.day === currentDate.getDate() && 
                                        dayInfo.fullDate === currentDate.toISOString().split("T")[0]
                         const allTaken = schedules.filter(s => s.date === dayInfo.fullDate).length > 0 && 
                                         schedules.filter(s => s.date === dayInfo.fullDate && !s.taken).length === 0
                         return (
-                          <div key={index} className="relative">
+                          <div key={index} className="relative flex-shrink-0">
                             <div
                               className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
                                 allTaken
