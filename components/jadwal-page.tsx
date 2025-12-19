@@ -363,11 +363,11 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
               <button
                 type="button"
                 onClick={() => handleDelete(s.id)}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors z-10"
               >
                 ×
               </button>
-              <p className="font-semibold flex items-center gap-2">
+              <p className="font-semibold flex items-center gap-2 pr-10">
                 <span className="text-2xl">💊</span>
                 Saatnya Minum Obat TBC hari ini
               </p>
