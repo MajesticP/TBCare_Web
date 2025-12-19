@@ -103,15 +103,18 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
     
     for (let i = -3; i <= 3; i++) {
       const date = new Date(year, month, today + i)
-      const dateStr = date.toISOString().split("T")[0]
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
       
       const reminderCount = schedules.filter(s => s.date === dateStr && !s.taken).length
+      
+      const dateObj = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      const todayObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
       
       days.push({
         day: date.getDate(),
         fullDate: dateStr,
         reminderCount,
-        isPast: date < new Date(year, month, today)
+        isPast: dateObj < todayObj
       })
     }
     return days
@@ -395,11 +398,15 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
                       {calendarDays.map((dayInfo, index) => {
                         const isToday = dayInfo.day === currentDate.getDate() && 
                                        dayInfo.fullDate === currentDate.toISOString().split("T")[0]
+                        const allTaken = schedules.filter(s => s.date === dayInfo.fullDate).length > 0 && 
+                                        schedules.filter(s => s.date === dayInfo.fullDate && !s.taken).length === 0
                         return (
                           <div key={index} className="relative">
                             <div
                               className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                                isToday
+                                allTaken
+                                  ? "bg-[#51cf66] text-white shadow-lg"
+                                  : isToday
                                   ? "bg-[#4a90d9] text-white shadow-lg"
                                   : dayInfo.isPast
                                   ? "bg-[#4a90d9]/60 text-white"
