@@ -117,7 +117,7 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
   }
 
   const inputClass =
-    "w-full pl-12 pr-4 py-3.5 bg-white rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4a90d9] focus:border-transparent transition-all text-foreground placeholder:text-muted-foreground text-sm"
+    "w-full pl-11 pr-4 py-3 bg-white rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4a90d9] focus:border-transparent transition-all text-foreground placeholder:text-muted-foreground text-sm"
 
   if (isLoading) {
     return (
@@ -131,8 +131,8 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f0f7fa] p-4 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-[#f0f7fa] py-6 px-4 animate-in fade-in slide-in-from-right-4 duration-500">
+      <div className="w-full max-w-sm mx-auto">
         <button
           onClick={onBack}
           className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors mb-4"
@@ -141,28 +141,28 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
           <span className="text-sm">Kembali</span>
         </button>
 
-        <div className="text-center mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Edit Profil</h1>
+        <div className="text-center mb-5">
+          <h1 className="text-2xl font-bold text-foreground">Edit Profil</h1>
           <p className="text-sm text-muted-foreground mt-1">Perbarui informasi profil Anda</p>
         </div>
 
         {success && (
-          <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded-xl text-sm text-center">
+          <div className="mb-3 p-3 bg-green-100 border border-green-300 text-green-700 rounded-xl text-sm text-center">
             {success}
           </div>
         )}
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-xl text-sm text-center">
+          <div className="mb-3 p-3 bg-red-100 border border-red-300 text-red-700 rounded-xl text-sm text-center">
             {error}
           </div>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {/* Nama */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <User className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <User className="w-4 h-4" />
             </div>
             <input
               type="text"
@@ -177,8 +177,8 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
 
           {/* Email (Read-only) */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <Mail className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Mail className="w-4 h-4" />
             </div>
             <input
               type="email"
@@ -193,11 +193,11 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
 
           {/* Tanggal Pertama Minum Obat */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10">
-              <Calendar className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10">
+              <Calendar className="w-4 h-4" />
             </div>
             {!formData.tanggalPertama && (
-              <span className="absolute left-12 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none z-10 select-none">
+              <span className="absolute left-11 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none z-10 select-none">
                 Tanggal Pertama Minum Obat
               </span>
             )}
@@ -212,11 +212,11 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
 
           {/* Waktu Saat Minum Obat */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10">
-              <Clock className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10">
+              <Clock className="w-4 h-4" />
             </div>
             {!formData.waktuMinum && (
-              <span className="absolute left-12 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none z-10 select-none">
+              <span className="absolute left-11 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none z-10 select-none">
                 Waktu Saat Minum Obat
               </span>
             )}
@@ -231,8 +231,8 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
 
           {/* Jenis Kelamin */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <Users className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Users className="w-4 h-4" />
             </div>
             <select
               name="jenisKelamin"
@@ -250,8 +250,8 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
 
           {/* Phone Number */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <Phone className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Phone className="w-4 h-4" />
             </div>
             <input
               type="tel"
@@ -265,8 +265,8 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
 
           {/* Berat Badan */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <Scale className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Scale className="w-4 h-4" />
             </div>
             <input
               type="number"
@@ -280,8 +280,8 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
 
           {/* Tinggi Badan */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <Ruler className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Ruler className="w-4 h-4" />
             </div>
             <input
               type="number"
@@ -295,8 +295,8 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
 
           {/* Alamat */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <MapPin className="w-5 h-5" />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <MapPin className="w-4 h-4" />
             </div>
             <input
               type="text"
@@ -309,11 +309,11 @@ export default function ProfileEditPage({ onBack, onSave }: ProfileEditPageProps
           </div>
 
           {/* Save Button */}
-          <div className="pt-2">
+          <div className="pt-3">
             <button
               onClick={handleSubmit}
               disabled={isSaving}
-              className="w-full py-4 bg-[#4a90d9] hover:bg-[#3a7dbf] text-white font-semibold rounded-full transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-[#4a90d9]/30 flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-[#4a90d9] hover:bg-[#3a7dbf] text-white font-semibold rounded-full transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-[#4a90d9]/30 flex items-center justify-center gap-2"
             >
               {isSaving ? (
                 <>
