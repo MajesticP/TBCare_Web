@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore"
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
 
 /* ================= TYPES ================= */
@@ -153,7 +153,7 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
           key={date}
           onClick={() => setSelectedDate(new Date(date))}
           className={`h-9 rounded-lg text-sm flex items-center justify-center
-            ${isSelected ? "bg-[#4a90d9] text-white" : hasOverdue ? "bg-red-500 text-white" : has ? "bg-blue-100" : "hover:bg-gray-100"}
+            ${isSelected ? "bg-[#4a90d9] text-white" : hasOverdue ? "bg-red-500 text-white" : "hover:bg-gray-100"}
           `}
         >
           {d}
@@ -223,9 +223,10 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
     const user = auth.currentUser
     if (!user) return
 
-    setSchedules((prev) => prev.filter((s) => s.id !== id))
+    setSchedules((prev) => prev.map((s) => s.id === id ? { ...s, taken: true } : s))
 
-    await deleteDoc(doc(db, "users", user.uid, "reminders", id))
+    const docRef = doc(db, "users", user.uid, "reminders", id)
+    await updateDoc(docRef, { taken: true })
 
     setShowSuccessPopup(true)
   }
@@ -399,7 +400,6 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
       </div>
 
       {/* ===== BOTTOM BAR MOBILE ===== */}
-      {/* ADDED: z-50 to ensure it floats above everything else */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 shadow-lg lg:hidden z-50">
         <div className="max-w-md mx-auto flex items-center justify-around">
           <button
