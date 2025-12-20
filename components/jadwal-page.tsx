@@ -95,7 +95,7 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
 
           if (diff >= 0 && diff <= 120000) {
             triggeredRef.current.add(key)
-            alert(`⏰ ${formatDate(s.date)} – ${s.medicines.join(", ")}`)
+            alert(`⏰ ${formatDate(s.date)} — ${s.medicines.join(", ")}`)
             return { ...s, notified: true }
           }
           return s
@@ -139,24 +139,42 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
 
     for (let d = 1; d <= days; d++) {
       const date = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
-      const has = schedules.some((s) => s.date === date)
       const isSelected = date === selected
 
+      // Check if all reminders for this date are taken
+      const dateSchedules = schedules.filter((s) => s.date === date)
+      const allTaken = dateSchedules.length > 0 && dateSchedules.every((s) => s.taken)
+
+      // Check for overdue reminders
       const hasOverdue = schedules.some((s) => {
         if (s.date !== date || s.taken) return false
         const scheduleTime = new Date(`${s.date}T${s.time}`)
         return scheduleTime < now
       })
 
+      // Check if there are any reminders (for orange dot indicator)
+      const hasReminders = dateSchedules.some((s) => !s.taken)
+
       cells.push(
         <button
           key={date}
           onClick={() => setSelectedDate(new Date(date))}
-          className={`h-9 rounded-lg text-sm flex items-center justify-center
-            ${isSelected ? "bg-[#4a90d9] text-white" : hasOverdue ? "bg-red-500 text-white" : "hover:bg-gray-100"}
+          className={`h-9 rounded-lg text-sm flex items-center justify-center relative transition-all
+            ${
+              allTaken
+                ? "bg-[#51cf66] text-white font-semibold shadow-md"
+                : isSelected
+                ? "bg-[#4a90d9] text-white"
+                : hasOverdue
+                ? "bg-red-500 text-white"
+                : "hover:bg-gray-100"
+            }
           `}
         >
           {d}
+          {hasReminders && !allTaken && (
+            <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+          )}
         </button>,
       )
     }
@@ -350,6 +368,13 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
               >
                 <ChevronRight />
               </Button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+                <div key={i} className="text-center text-xs font-medium text-gray-500 py-1">
+                  {day}
+                </div>
+              ))}
             </div>
             <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
           </div>
