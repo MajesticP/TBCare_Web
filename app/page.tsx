@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { onAuthStateChanged } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 import LoadingScreen from "@/components/loading-screen"
 import LoginPage from "@/components/login-page"
 import RegisterPage from "@/components/register-page"
@@ -54,73 +56,103 @@ const validPages: Page[] = [
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState<Page>("login")
-  const [isClient, setIsClient] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  // Mark when we're on the client
-  useEffect(() => {
-    setIsClient(true)
+  // Get page from URL query parameter
+  const getPageFromUrl = useCallback((): Page => {
+    if (typeof window === "undefined") return "login"
+    
+    const params = new URLSearchParams(window.location.search)
+    const page = params.get("page") as Page
+    
+    if (page && validPages.includes(page)) {
+      return page
+    }
+    return "login"
   }, [])
 
   // Universal navigation function
   const navigateTo = useCallback((page: Page) => {
+    console.log("Navigating to:", page)
     setCurrentPage(page)
-    const url = page === "login" ? "/" : `/${page}`
+    const url = page === "login" ? "/" : `/?page=${page}`
     window.history.pushState(null, "", url)
   }, [])
 
-  // Initial setup - only runs on client
+  // Handle Firebase auth state changes
   useEffect(() => {
-    if (!isClient) return
-
-    // Get the current path from URL
-    const path = window.location.pathname.slice(1) || "login"
-    const targetPage = validPages.includes(path as Page) ? (path as Page) : "login"
-
-    // Check if user is logged in
-    const savedUser = localStorage.getItem("tbcare_current_user")
-    
-    // If trying to access protected page without login, redirect to login
-    if (!savedUser && targetPage !== "login" && targetPage !== "register") {
-      setCurrentPage("login")
-      window.history.replaceState(null, "", "/")
-    } else {
-      setCurrentPage(targetPage)
-    }
-
-    // Show loading screen for 3 seconds
-    const loadingTimer = setTimeout(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("Firebase auth state changed:", !!user)
+      
+      if (user) {
+        // User is logged in
+        setIsAuthenticated(true)
+        
+        // Save user data to localStorage
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL
+        }
+        localStorage.setItem("tbcare_current_user", JSON.stringify(userData))
+        
+        // Get the current page from URL
+        const urlPage = getPageFromUrl()
+        
+        // If on login/register page, redirect to home
+        if (urlPage === "login" || urlPage === "register") {
+          setCurrentPage("home")
+          window.history.replaceState(null, "", "/?page=home")
+        } else {
+          // Stay on current page
+          setCurrentPage(urlPage)
+        }
+      } else {
+        // User is logged out
+        setIsAuthenticated(false)
+        localStorage.removeItem("tbcare_current_user")
+        
+        const urlPage = getPageFromUrl()
+        
+        // If trying to access protected pages, redirect to login
+        if (urlPage !== "login" && urlPage !== "register") {
+          setCurrentPage("login")
+          window.history.replaceState(null, "", "/")
+        } else {
+          setCurrentPage(urlPage)
+        }
+      }
+      
+      // Hide loading screen after auth state is determined
       setIsLoading(false)
-    }, 3000)
+    })
 
-    return () => clearTimeout(loadingTimer)
-  }, [isClient])
+    return () => unsubscribe()
+  }, [getPageFromUrl])
 
-  // Handle back/forward buttons
+  // Handle browser back/forward buttons
   useEffect(() => {
-    if (!isClient) return
-
-    const handleUrlChange = () => {
-      const path = window.location.pathname.slice(1) || "login"
-      const targetPage = validPages.includes(path as Page) ? (path as Page) : "login"
+    const handlePopState = () => {
+      const page = getPageFromUrl()
       
-      // Check if user is logged in
-      const savedUser = localStorage.getItem("tbcare_current_user")
-      
-      // If trying to access protected page without login, redirect to login
-      if (!savedUser && targetPage !== "login" && targetPage !== "register") {
+      // Check if user is trying to access protected page without auth
+      if (!isAuthenticated && page !== "login" && page !== "register") {
         setCurrentPage("login")
         window.history.replaceState(null, "", "/")
+      } else if (isAuthenticated && (page === "login" || page === "register")) {
+        setCurrentPage("home")
+        window.history.replaceState(null, "", "/?page=home")
       } else {
-        setCurrentPage(targetPage)
+        setCurrentPage(page)
       }
     }
 
-    window.addEventListener("popstate", handleUrlChange)
-    return () => window.removeEventListener("popstate", handleUrlChange)
-  }, [isClient])
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [getPageFromUrl, isAuthenticated])
 
-  // Show loading until client-side is ready
-  if (!isClient || isLoading) {
+  if (isLoading) {
     return (
       <main className="min-h-screen bg-[#f0f7fa]">
         <LoadingScreen />
@@ -133,7 +165,10 @@ export default function Home() {
       {currentPage === "login" && (
         <LoginPage
           onRegister={() => navigateTo("register")}
-          onLogin={() => navigateTo("home")}
+          onLogin={() => {
+            console.log("Login callback triggered")
+            // Firebase auth state will handle navigation
+          }}
         />
       )}
 
@@ -144,8 +179,8 @@ export default function Home() {
       {currentPage === "home" && (
         <HomePage
           onLogout={() => {
-            localStorage.removeItem("tbcare_current_user")
-            navigateTo("login")
+            // Sign out from Firebase (this will trigger onAuthStateChanged)
+            auth.signOut()
           }}
           onNavigate={navigateTo}
           onNavigateToProfile={() => navigateTo("profile")}
@@ -172,8 +207,7 @@ export default function Home() {
       {currentPage === "jadwal" && (
         <JadwalPage 
           onLogout={() => {
-            localStorage.removeItem("tbcare_current_user")
-            navigateTo("login")
+            auth.signOut()
           }}
           onNavigate={navigateTo}
         />
