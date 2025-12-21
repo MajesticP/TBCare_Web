@@ -30,14 +30,17 @@ interface MedicationSchedule {
 }
 
 interface UserData {
-  nama: string
+  nama?: string
   email: string
+  uid?: string // Firebase UID
+  id?: number // Local account ID
 }
 
 /* ================= COMPONENT ================= */
 
 export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
   const [currentUser, setCurrentUser] = useState<UserData | null>(null)
+  const [isFirebaseUser, setIsFirebaseUser] = useState(false)
 
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -56,35 +59,74 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
   /* ================= INIT USER ================= */
   useEffect(() => {
     const u = localStorage.getItem("tbcare_current_user")
-    if (u) setCurrentUser(JSON.parse(u))
+    if (u) {
+      const userData = JSON.parse(u)
+      setCurrentUser(userData)
+      // Check if user is Firebase user (has uid) or local user (has id from Date.now())
+      // Firebase users will have 'uid' property, local users will have 'id' property
+      setIsFirebaseUser(!!userData.uid && !userData.id)
+      console.log("User loaded:", userData)
+      console.log("Is Firebase user:", !!userData.uid && !userData.id)
+    }
   }, [])
 
-  /* ================= LOAD FIRESTORE ================= */
+  /* ================= LOAD DATA ================= */
   useEffect(() => {
     const load = async () => {
-      const user = auth.currentUser
-      if (!user) return
+      if (!currentUser) return
 
-      const snap = await getDocs(collection(db, "users", user.uid, "reminders"))
-
-      const data = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<MedicationSchedule, "id">),
-      }))
-
-      setSchedules(data)
+      if (isFirebaseUser && auth.currentUser) {
+        // Load from Firestore for Firebase users
+        try {
+          console.log("Loading from Firestore for user:", auth.currentUser.uid)
+          const snap = await getDocs(collection(db, "users", auth.currentUser.uid, "reminders"))
+          const data = snap.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as Omit<MedicationSchedule, "id">),
+          }))
+          console.log("Loaded from Firestore:", data)
+          setSchedules(data)
+        } catch (error) {
+          console.error("Error loading from Firestore:", error)
+        }
+      } else {
+        // Load from localStorage for local accounts
+        const localKey = `schedules_${currentUser.email}`
+        console.log("Loading from localStorage with key:", localKey)
+        const localSchedules = localStorage.getItem(localKey)
+        if (localSchedules) {
+          const data = JSON.parse(localSchedules)
+          console.log("Loaded from localStorage:", data)
+          setSchedules(data)
+        } else {
+          console.log("No schedules found in localStorage")
+          setSchedules([])
+        }
+      }
     }
 
-    load()
-  }, [])
+    if (currentUser) {
+      load()
+    }
+  }, [currentUser, isFirebaseUser])
+
+  /* ================= SAVE TO LOCALSTORAGE ================= */
+  const saveToLocalStorage = (newSchedules: MedicationSchedule[]) => {
+    if (currentUser && !isFirebaseUser) {
+      const localKey = `schedules_${currentUser.email}`
+      console.log("Saving to localStorage with key:", localKey)
+      console.log("Data:", newSchedules)
+      localStorage.setItem(localKey, JSON.stringify(newSchedules))
+    }
+  }
 
   /* ================= ALARM ================= */
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date()
 
-      setSchedules((prev) =>
-        prev.map((s) => {
+      setSchedules((prev) => {
+        const updated = prev.map((s) => {
           if (s.taken || s.notified) return s
 
           const key = `${s.date}_${s.time}`
@@ -99,12 +141,18 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
             return { ...s, notified: true }
           }
           return s
-        }),
-      )
+        })
+        
+        // Save to localStorage if using local account
+        if (!isFirebaseUser) {
+          saveToLocalStorage(updated)
+        }
+        return updated
+      })
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [currentUser, isFirebaseUser])
 
   /* ================= HELPERS ================= */
 
@@ -141,18 +189,15 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
       const date = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
       const isSelected = date === selected
 
-      // Check if all reminders for this date are taken
       const dateSchedules = schedules.filter((s) => s.date === date)
       const allTaken = dateSchedules.length > 0 && dateSchedules.every((s) => s.taken)
 
-      // Check for overdue reminders
       const hasOverdue = schedules.some((s) => {
         if (s.date !== date || s.taken) return false
         const scheduleTime = new Date(`${s.date}T${s.time}`)
         return scheduleTime < now
       })
 
-      // Check if there are any reminders (for orange dot indicator)
       const hasReminders = dateSchedules.some((s) => !s.taken)
 
       cells.push(
@@ -184,8 +229,10 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
   /* ================= ADD ================= */
 
   const handleAdd = async () => {
-    const user = auth.currentUser
-    if (!user || !startDate) return
+    if (!currentUser || !startDate) {
+      console.log("Cannot add: missing user or date")
+      return
+    }
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -209,6 +256,12 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
     const s = new Date(startDate)
     const e = endDate ? new Date(endDate) : s
 
+    const newSchedules: MedicationSchedule[] = []
+
+    console.log("Adding reminders from", startDate, "to", endDate || startDate)
+    console.log("Is Firebase user:", isFirebaseUser)
+    console.log("Auth current user:", auth.currentUser?.uid)
+
     for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
       const payload = {
         date: d.toISOString().split("T")[0],
@@ -218,10 +271,35 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
         notified: false,
       }
 
-      const ref = await addDoc(collection(db, "users", user.uid, "reminders"), payload)
-
-      setSchedules((prev) => [...prev, { id: ref.id, ...payload }])
+      if (isFirebaseUser && auth.currentUser) {
+        // Save to Firestore for Firebase users
+        try {
+          console.log("Adding to Firestore:", payload)
+          const ref = await addDoc(collection(db, "users", auth.currentUser.uid, "reminders"), payload)
+          newSchedules.push({ id: ref.id, ...payload })
+          console.log("Added to Firestore with ID:", ref.id)
+        } catch (error) {
+          console.error("Error adding to Firestore:", error)
+          alert("Gagal menyimpan reminder. Silakan coba lagi.")
+          return
+        }
+      } else {
+        // Save to localStorage for local accounts
+        const id = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        console.log("Adding to localStorage with ID:", id)
+        newSchedules.push({ id, ...payload })
+      }
     }
+
+    const updatedSchedules = [...schedules, ...newSchedules]
+    setSchedules(updatedSchedules)
+    
+    // Save to localStorage if using local account
+    if (!isFirebaseUser) {
+      saveToLocalStorage(updatedSchedules)
+    }
+
+    console.log("Successfully added", newSchedules.length, "reminders")
 
     setOpenAdd(false)
     setStartDate("")
@@ -230,21 +308,48 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
   }
 
   const handleDelete = async (id: string) => {
-    const user = auth.currentUser
-    if (!user) return
+    if (!currentUser) return
 
-    setSchedules((prev) => prev.filter((s) => s.id !== id))
-    await deleteDoc(doc(db, "users", user.uid, "reminders", id))
+    console.log("Deleting reminder:", id)
+    const updatedSchedules = schedules.filter((s) => s.id !== id)
+    setSchedules(updatedSchedules)
+
+    if (isFirebaseUser && auth.currentUser) {
+      // Delete from Firestore for Firebase users
+      try {
+        await deleteDoc(doc(db, "users", auth.currentUser.uid, "reminders", id))
+        console.log("Deleted from Firestore")
+      } catch (error) {
+        console.error("Error deleting from Firestore:", error)
+      }
+    } else {
+      // Save to localStorage for local accounts
+      saveToLocalStorage(updatedSchedules)
+      console.log("Deleted from localStorage")
+    }
   }
 
   const handleMarkAsTaken = async (id: string) => {
-    const user = auth.currentUser
-    if (!user) return
+    if (!currentUser) return
 
-    setSchedules((prev) => prev.map((s) => s.id === id ? { ...s, taken: true } : s))
+    console.log("Marking as taken:", id)
+    const updatedSchedules = schedules.map((s) => s.id === id ? { ...s, taken: true } : s)
+    setSchedules(updatedSchedules)
 
-    const docRef = doc(db, "users", user.uid, "reminders", id)
-    await updateDoc(docRef, { taken: true })
+    if (isFirebaseUser && auth.currentUser) {
+      // Update in Firestore for Firebase users
+      try {
+        const docRef = doc(db, "users", auth.currentUser.uid, "reminders", id)
+        await updateDoc(docRef, { taken: true })
+        console.log("Updated in Firestore")
+      } catch (error) {
+        console.error("Error updating Firestore:", error)
+      }
+    } else {
+      // Save to localStorage for local accounts
+      saveToLocalStorage(updatedSchedules)
+      console.log("Updated in localStorage")
+    }
 
     setShowSuccessPopup(true)
   }
@@ -383,6 +488,12 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
             <Plus className="w-4 h-4 mr-2" /> Tambah Reminder
           </Button>
 
+          {upcomingReminders.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              Belum ada reminder. Klik "Tambah Reminder" untuk membuat jadwal baru.
+            </div>
+          )}
+
           {upcomingReminders.map((s) => (
             <div key={s.id} className="bg-[#ffd4b3] rounded-2xl p-4 space-y-2 border border-orange-200 relative">
               <button
@@ -409,7 +520,7 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-blue-600" />
-                <span className="font-bold text-blue-600">{s.time} Pagi</span>
+                <span className="font-bold text-blue-600">{s.time}</span>
               </div>
               {!s.taken && (
                 <Button
@@ -470,7 +581,7 @@ export default function JadwalPage({ onLogout, onNavigate }: JadwalPageProps) {
           <Label>Tanggal Mulai</Label>
           <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
 
-          <Label>Tanggal Akhir</Label>
+          <Label>Tanggal Akhir (Opsional)</Label>
           <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
 
           <Label>Jam</Label>
