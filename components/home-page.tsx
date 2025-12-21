@@ -67,7 +67,19 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
   useEffect(() => {
     const loadSchedules = async () => {
       const user = auth.currentUser
-      if (!user) return
+      if (!user) {
+        // Load from localStorage for local accounts
+        const localUser = localStorage.getItem("tbcare_current_user")
+        if (localUser) {
+          const userData = JSON.parse(localUser)
+          const localKey = `schedules_${userData.email}`
+          const localSchedules = localStorage.getItem(localKey)
+          if (localSchedules) {
+            setSchedules(JSON.parse(localSchedules))
+          }
+        }
+        return
+      }
 
       try {
         const snap = await getDocs(collection(db, "users", user.uid, "reminders"))
@@ -195,6 +207,7 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex">
+      {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 p-6 fixed h-full">
         <div className="flex items-center gap-3 mb-10">
           <div className="w-10 h-10 rounded-xl overflow-hidden">
@@ -230,9 +243,13 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
           </button>
         </nav>
 
+        {/* Profile Section with Click to Edit */}
         <div className="mt-auto pt-6 border-t border-gray-100">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#4a90d9]/20">
+          <button
+            onClick={onNavigateToProfile}
+            className="w-full flex items-center gap-3 mb-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+          >
+            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#4a90d9]/20 group-hover:ring-[#4a90d9]/40 transition-all">
               <Image
                 src="/images/avatar.png"
                 alt="Profile"
@@ -241,11 +258,12 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-left">
               <p className="font-medium text-foreground truncate">{currentUser?.nama || "User"}</p>
               <p className="text-xs text-muted-foreground truncate">{currentUser?.email || "user@email.com"}</p>
             </div>
-          </div>
+            <User className="w-4 h-4 text-gray-400 group-hover:text-[#4a90d9] transition-colors" />
+          </button>
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors text-sm font-medium"
@@ -256,6 +274,7 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
         </div>
       </aside>
 
+      {/* Mobile Sidebar */}
       {showSidebar && (
         <div
           className="fixed inset-0 bg-black/50 z-40 animate-in fade-in duration-200 lg:hidden"
@@ -311,6 +330,7 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 lg:ml-64">
         <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white border-b border-gray-100 sticky top-0 z-30">
           <div>
@@ -332,7 +352,10 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
                 <span className="absolute top-2 right-2 w-2 h-2 bg-[#f5a623] rounded-full"></span>
               )}
             </button>
-            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#4a90d9]/20">
+            <button 
+              onClick={onNavigateToProfile}
+              className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#4a90d9]/20 hover:ring-[#4a90d9]/40 transition-all"
+            >
               <Image
                 src="/images/avatar.png"
                 alt="Profile"
@@ -340,7 +363,7 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
                 height={40}
                 className="w-full h-full object-cover"
               />
-            </div>
+            </button>
           </div>
         </header>
 
@@ -522,28 +545,63 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
               </div>
 
               <div className="hidden lg:block bg-white rounded-3xl p-5 border border-gray-100 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[#4a90d9]/10 flex items-center justify-center">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#4a90d9]/10 flex items-center justify-center flex-shrink-0">
                     <Calendar className="w-6 h-6 text-[#4a90d9]" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-muted-foreground">Total Hari Pengobatan</p>
                     <p className="text-2xl font-bold text-foreground">
-                      {180 - daysRemaining}{" "}
-                      <span className="text-sm font-normal text-muted-foreground">/ 180 hari</span>
+                      {schedules.filter(s => s.taken).length}{" "}
+                      <span className="text-sm font-normal text-muted-foreground">/ {schedules.length} hari</span>
                     </p>
                   </div>
                 </div>
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-[#4a90d9] to-[#51cf66] h-full rounded-full transition-all duration-500"
+                    style={{ 
+                      width: schedules.length > 0 
+                        ? `${(schedules.filter(s => s.taken).length / schedules.length) * 100}%` 
+                        : '0%' 
+                    }}
+                  ></div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  {schedules.length > 0 
+                    ? `${Math.round((schedules.filter(s => s.taken).length / schedules.length) * 100)}% selesai`
+                    : 'Belum ada reminder'}
+                </p>
               </div>
 
               <div className="hidden lg:block bg-white rounded-3xl p-5 border border-gray-100 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center flex-shrink-0">
                     <span className="text-2xl">✓</span>
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-muted-foreground">Status Kepatuhan</p>
-                    <p className="text-2xl font-bold text-green-600">Baik</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {schedules.length > 0 
+                        ? Math.round((schedules.filter(s => s.taken).length / schedules.length) * 100) >= 80 
+                          ? 'Sangat Baik' 
+                          : Math.round((schedules.filter(s => s.taken).length / schedules.length) * 100) >= 60
+                          ? 'Baik'
+                          : 'Perlu Ditingkatkan'
+                        : '-'}
+                    </p>
+                  </div>
+                </div>
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="bg-green-50 rounded-lg p-2">
+                    <p className="text-lg font-bold text-green-600">{schedules.filter(s => s.taken).length}</p>
+                    <p className="text-xs text-muted-foreground">Selesai</p>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-2">
+                    <p className="text-lg font-bold text-orange-600">{schedules.filter(s => !s.taken).length}</p>
+                    <p className="text-xs text-muted-foreground">Tersisa</p>
                   </div>
                 </div>
               </div>
@@ -552,6 +610,7 @@ export default function HomePage({ onLogout, onNavigate, onNavigateToProfile, on
         </main>
       </div>
 
+      {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 shadow-lg lg:hidden">
         <div className="max-w-md mx-auto flex items-center justify-around">
           <button className="flex flex-col items-center gap-1 px-6 py-2 bg-[#d4e8f9] rounded-full">
