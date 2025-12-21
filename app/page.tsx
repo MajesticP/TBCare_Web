@@ -54,23 +54,11 @@ const validPages: Page[] = [
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState<Page>("login")
+  const [isClient, setIsClient] = useState(false)
 
-  // Sync URL with currentPage + handle back/forward buttons
+  // Mark when we're on the client
   useEffect(() => {
-    const handleUrlChange = () => {
-      const path = window.location.pathname.slice(1) || "login"
-      if (validPages.includes(path as Page)) {
-        setCurrentPage(path as Page)
-      } else {
-        setCurrentPage("login")
-        window.history.replaceState(null, "", "/")
-      }
-    }
-
-    handleUrlChange() // initial load
-    window.addEventListener("popstate", handleUrlChange)
-
-    return () => window.removeEventListener("popstate", handleUrlChange)
+    setIsClient(true)
   }, [])
 
   // Universal navigation function
@@ -80,23 +68,59 @@ export default function Home() {
     window.history.pushState(null, "", url)
   }, [])
 
-  // Check login status IMMEDIATELY + show loading screen for 3 seconds
+  // Initial setup - only runs on client
   useEffect(() => {
-    // Always show loading screen for 3 seconds (nice UX)
+    if (!isClient) return
+
+    // Get the current path from URL
+    const path = window.location.pathname.slice(1) || "login"
+    const targetPage = validPages.includes(path as Page) ? (path as Page) : "login"
+
+    // Check if user is logged in
+    const savedUser = localStorage.getItem("tbcare_current_user")
+    
+    // If trying to access protected page without login, redirect to login
+    if (!savedUser && targetPage !== "login" && targetPage !== "register") {
+      setCurrentPage("login")
+      window.history.replaceState(null, "", "/")
+    } else {
+      setCurrentPage(targetPage)
+    }
+
+    // Show loading screen for 3 seconds
     const loadingTimer = setTimeout(() => {
       setIsLoading(false)
     }, 3000)
 
-    // Check if user is already logged in — runs right away on every load/refresh
-    const savedUser = localStorage.getItem("tbcare_current_user")
-    if (savedUser) {
-      navigateTo("home")
+    return () => clearTimeout(loadingTimer)
+  }, [isClient])
+
+  // Handle back/forward buttons
+  useEffect(() => {
+    if (!isClient) return
+
+    const handleUrlChange = () => {
+      const path = window.location.pathname.slice(1) || "login"
+      const targetPage = validPages.includes(path as Page) ? (path as Page) : "login"
+      
+      // Check if user is logged in
+      const savedUser = localStorage.getItem("tbcare_current_user")
+      
+      // If trying to access protected page without login, redirect to login
+      if (!savedUser && targetPage !== "login" && targetPage !== "register") {
+        setCurrentPage("login")
+        window.history.replaceState(null, "", "/")
+      } else {
+        setCurrentPage(targetPage)
+      }
     }
 
-    return () => clearTimeout(loadingTimer)
-  }, [navigateTo])
+    window.addEventListener("popstate", handleUrlChange)
+    return () => window.removeEventListener("popstate", handleUrlChange)
+  }, [isClient])
 
-  if (isLoading) {
+  // Show loading until client-side is ready
+  if (!isClient || isLoading) {
     return (
       <main className="min-h-screen bg-[#f0f7fa]">
         <LoadingScreen />
