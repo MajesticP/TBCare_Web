@@ -57,6 +57,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState<Page>("login")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authCheckComplete, setAuthCheckComplete] = useState(false)
 
   // Get page from URL query parameter
   const getPageFromUrl = useCallback((): Page => {
@@ -79,23 +80,36 @@ export default function Home() {
     window.history.pushState(null, "", url)
   }, [])
 
-  // Handle Firebase auth state changes
+  // Check authentication on mount - checks BOTH Firebase and localStorage
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log("Firebase auth state changed:", !!user)
+    let firebaseChecked = false
+    
+    // Set up Firebase auth listener
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log("Firebase auth state:", !!firebaseUser)
+      firebaseChecked = true
       
-      if (user) {
-        // User is logged in
-        setIsAuthenticated(true)
-        
-        // Save user data to localStorage
-        const userData = {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL
+      // Check localStorage for local account
+      const localUser = localStorage.getItem("tbcare_current_user")
+      console.log("Local user exists:", !!localUser)
+      
+      // User is authenticated if EITHER Firebase user exists OR local user exists
+      const isAuth = !!firebaseUser || !!localUser
+      console.log("Is authenticated:", isAuth)
+      
+      setIsAuthenticated(isAuth)
+      
+      if (isAuth) {
+        // If Firebase user exists, save to localStorage
+        if (firebaseUser) {
+          const userData = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL
+          }
+          localStorage.setItem("tbcare_current_user", JSON.stringify(userData))
         }
-        localStorage.setItem("tbcare_current_user", JSON.stringify(userData))
         
         // Get the current page from URL
         const urlPage = getPageFromUrl()
@@ -110,9 +124,6 @@ export default function Home() {
         }
       } else {
         // User is logged out
-        setIsAuthenticated(false)
-        localStorage.removeItem("tbcare_current_user")
-        
         const urlPage = getPageFromUrl()
         
         // If trying to access protected pages, redirect to login
@@ -124,23 +135,64 @@ export default function Home() {
         }
       }
       
-      // Hide loading screen after auth state is determined
+      setAuthCheckComplete(true)
       setIsLoading(false)
     })
 
-    return () => unsubscribe()
+    // Fallback: if Firebase takes too long, check localStorage only
+    const fallbackTimer = setTimeout(() => {
+      if (!firebaseChecked) {
+        console.log("Firebase check timeout, using localStorage only")
+        const localUser = localStorage.getItem("tbcare_current_user")
+        const isAuth = !!localUser
+        
+        setIsAuthenticated(isAuth)
+        
+        if (isAuth) {
+          const urlPage = getPageFromUrl()
+          if (urlPage === "login" || urlPage === "register") {
+            setCurrentPage("home")
+            window.history.replaceState(null, "", "/?page=home")
+          } else {
+            setCurrentPage(urlPage)
+          }
+        } else {
+          const urlPage = getPageFromUrl()
+          if (urlPage !== "login" && urlPage !== "register") {
+            setCurrentPage("login")
+            window.history.replaceState(null, "", "/")
+          } else {
+            setCurrentPage(urlPage)
+          }
+        }
+        
+        setAuthCheckComplete(true)
+        setIsLoading(false)
+      }
+    }, 1000) // 1 second fallback
+
+    return () => {
+      unsubscribe()
+      clearTimeout(fallbackTimer)
+    }
   }, [getPageFromUrl])
 
   // Handle browser back/forward buttons
   useEffect(() => {
+    if (!authCheckComplete) return
+
     const handlePopState = () => {
       const page = getPageFromUrl()
       
+      // Check authentication (both Firebase and localStorage)
+      const localUser = localStorage.getItem("tbcare_current_user")
+      const isAuth = !!auth.currentUser || !!localUser
+      
       // Check if user is trying to access protected page without auth
-      if (!isAuthenticated && page !== "login" && page !== "register") {
+      if (!isAuth && page !== "login" && page !== "register") {
         setCurrentPage("login")
         window.history.replaceState(null, "", "/")
-      } else if (isAuthenticated && (page === "login" || page === "register")) {
+      } else if (isAuth && (page === "login" || page === "register")) {
         setCurrentPage("home")
         window.history.replaceState(null, "", "/?page=home")
       } else {
@@ -150,7 +202,20 @@ export default function Home() {
 
     window.addEventListener("popstate", handlePopState)
     return () => window.removeEventListener("popstate", handlePopState)
-  }, [getPageFromUrl, isAuthenticated])
+  }, [getPageFromUrl, authCheckComplete])
+
+  // Handle logout
+  const handleLogout = useCallback(() => {
+    console.log("Logging out...")
+    // Clear localStorage
+    localStorage.removeItem("tbcare_current_user")
+    // Sign out from Firebase
+    auth.signOut()
+    // Update state
+    setIsAuthenticated(false)
+    // Navigate to login
+    navigateTo("login")
+  }, [navigateTo])
 
   if (isLoading) {
     return (
@@ -167,7 +232,10 @@ export default function Home() {
           onRegister={() => navigateTo("register")}
           onLogin={() => {
             console.log("Login callback triggered")
-            // Firebase auth state will handle navigation
+            // Update authentication state
+            setIsAuthenticated(true)
+            // Navigate to home
+            navigateTo("home")
           }}
         />
       )}
@@ -178,10 +246,7 @@ export default function Home() {
 
       {currentPage === "home" && (
         <HomePage
-          onLogout={() => {
-            // Sign out from Firebase (this will trigger onAuthStateChanged)
-            auth.signOut()
-          }}
+          onLogout={handleLogout}
           onNavigate={navigateTo}
           onNavigateToProfile={() => navigateTo("profile")}
           onOpenBerita={() => navigateTo("berita-tbc")}
@@ -206,9 +271,7 @@ export default function Home() {
 
       {currentPage === "jadwal" && (
         <JadwalPage 
-          onLogout={() => {
-            auth.signOut()
-          }}
+          onLogout={handleLogout}
           onNavigate={navigateTo}
         />
       )}
